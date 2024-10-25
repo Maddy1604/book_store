@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     book_users_url : str
     SUPER_USER_KEY : str
-    # notes_db_url : str
+    books_db_url : str
 
     JWT_SECRET : str
     JWT_ALGORITHM : str
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     VALIDATE_CERTS : bool = True
 
     # # For user_services address 
-    # AUTHORIZATION : str
+    ENDPOINT : str
     # CELERY_PATH : str
     # REDBEAT_URL : str
     # USER_SERVICE_URL : str
