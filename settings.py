@@ -7,9 +7,12 @@ logger.add("logs/file.log", level="INFO", rotation="100 MB")
 class Settings(BaseSettings):
     model_config=SettingsConfigDict(env_file='.env', extra="ignore")
 
-    book_users_url : str
     SUPER_USER_KEY : str
+
+    # Database urls
+    book_users_url : str
     books_db_url : str
+    books_cart_url : str
 
     JWT_SECRET : str
     JWT_ALGORITHM : str
@@ -28,11 +31,12 @@ class Settings(BaseSettings):
     USE_CREDENTIALS : bool = True
     VALIDATE_CERTS : bool = True
 
-    # # For user_services address 
+    # For user_services address 
     ENDPOINT : str
-    # CELERY_PATH : str
-    # REDBEAT_URL : str
-    # USER_SERVICE_URL : str
+
+    # For book_services to identify book
+    IDENTIFY_BOOK : str
+    
 
 settings = Settings()
 
