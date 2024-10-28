@@ -147,7 +147,7 @@ def delete_cart_item(request: Request, book_id: int, db: Session = Depends(get_d
         user_id = user_data["id"]
 
         # Retrieve the user's cart
-        cart = db.query(Cart).filter(Cart.user_id == user_id).first() #is order = false
+        cart = db.query(Cart).filter(Cart.user_id == user_id, Cart.is_ordered == False).first() 
         if not cart:
             raise HTTPException(status_code=404, detail="Cart not found")
 
