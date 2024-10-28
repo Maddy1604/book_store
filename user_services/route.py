@@ -107,7 +107,7 @@ def register_user(request: Request, user: UserRegistration, db: Session = Depend
         logger.info("Verification link is genereated contained access token")
 
         # Celery task for sending verification mail to newly registered user to their email address
-        send_verification_email.delay(db_user.email, str(verify_link))
+        send_verification_email(db_user.email, str(verify_link))
         logger.info(f"Verifiction email is send to user at user email: {user.email}")
         
         # Return the success message

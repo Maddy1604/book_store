@@ -19,7 +19,7 @@ mail_config = ConnectionConfig(
 # Sending the verification mail when new user register using api
 # In this function it takes email and verify link : str (argument)  
 
-async def send_verification_email(email: str, verify_link: str):
+def send_verification_email(email: str, verify_link: str):
     """
     Description:
     Sends a verification email to the user.
@@ -39,7 +39,7 @@ async def send_verification_email(email: str, verify_link: str):
 
         # mail object fm is assigned FastMail with configuration object as parameter
         fm = FastMail(mail_config)
-        await fm.send_message(message)
+        fm.send_message(message)
         logger.info(f"Verification email sent to {email}.")
     
     except Exception as error:
