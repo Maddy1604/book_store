@@ -35,10 +35,15 @@ def create_or_update_cart_item(request: Request, payload: CreateCartItem, db: Se
         # Parse the response JSON and extract book price
         book_data = response.json()
         book_price = book_data["data"].get("price")
+        book_stock = book_data["data"].get("stock")
 
         if book_price is None:
             logger.error("Book price not found in book data.")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Book price not available")
+
+        if payload.quantity > book_stock:
+            logger.info(f"Orderd book quantity {payload.quantity} is high than availabel book stock {book_stock}")
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"High order quuantity than present book stock ")
 
         # Get or create the user's cart
         cart = db.query(Cart).filter(Cart.user_id == user_id, Cart.is_ordered == False).first()
@@ -52,7 +57,7 @@ def create_or_update_cart_item(request: Request, payload: CreateCartItem, db: Se
         cart_item = db.query(CartItem).filter(CartItem.cart_id == cart.id, CartItem.book_id == payload.book_id).first()
         if cart_item:
             # Update quantity and price for existing item
-            cart_item.quantity = cart_item.quantity + payload.quantity
+            cart_item.quantity = payload.quantity
             cart_item.price = book_price * cart_item.quantity
         else:
             # Create a new cart item for the book
@@ -104,7 +109,7 @@ def get_cart(request: Request, db: Session = Depends(get_db)):
         user_data = request.state.user
         user_id = user_data["id"]
 
-        cart = db.query(Cart).filter(Cart.user_id == user_id).first()
+        cart = db.query(Cart).filter(Cart.user_id == user_id, Cart.is_ordered ==  False).first()
         if not cart:
             raise HTTPException(status_code=404, detail="Cart not found")
 
@@ -126,8 +131,8 @@ def get_cart(request: Request, db: Session = Depends(get_db)):
 
 
 # DELETE Cart Item
-@app.delete("/cart/items/{item_id}", status_code=200)
-def delete_cart_item(request: Request, book_id: int, quantity: int, db: Session = Depends(get_db)):
+@app.delete("/cart/items", status_code=200)
+def delete_cart_item(request: Request, book_id: int, db: Session = Depends(get_db)):
     """
     Decrease the quantity of a cart item or delete it if the quantity reaches zero.
     Parameters:
@@ -142,7 +147,7 @@ def delete_cart_item(request: Request, book_id: int, quantity: int, db: Session 
         user_id = user_data["id"]
 
         # Retrieve the user's cart
-        cart = db.query(Cart).filter(Cart.user_id == user_id).first()
+        cart = db.query(Cart).filter(Cart.user_id == user_id).first() #is order = false
         if not cart:
             raise HTTPException(status_code=404, detail="Cart not found")
 
@@ -151,28 +156,7 @@ def delete_cart_item(request: Request, book_id: int, quantity: int, db: Session 
         if not cart_item:
             raise HTTPException(status_code=404, detail="Cart item not found")
 
-        # Verify the book exists in book_services
-        book_service_url = f"{settings.IDENTIFY_BOOK}{book_id}"
-        response = http.get(book_service_url, headers={"Authorization": request.headers.get("Authorization")})
-
-        # Check response status and handle error if book is not found
-        if response.status_code != 200:
-            logger.info(f"Book with ID {book_id} not found.")
-            raise HTTPException(status_code=400, detail=f"Book with ID {book_id} not found")
-        
-        book_data = response.json()
-        book_price = book_data["data"].get("price")
-
-        if book_price is None:
-            logger.error("Book price not found in book data.")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Book price not available")
-
-        # Reduce quantity or delete the item if quantity reaches zero
-        if cart_item.quantity > quantity:
-            cart_item.quantity = cart_item.quantity - quantity
-            cart_item.price = book_price * cart_item.quantity  # Updatating price based on new quantity
-        else:
-            db.delete(cart_item)
+        db.delete(cart_item)
 
         # Commit changes to the cart item
         db.commit()
@@ -191,9 +175,9 @@ def delete_cart_item(request: Request, book_id: int, quantity: int, db: Session 
             "status": "success"
         }
 
-    except HTTPException as e:
-        logger.error(f"Error during cart item update or deletion: {str(e.detail)}")
-        raise e
-    except Exception as e:
-        logger.error(f"Unexpected error during cart item update or deletion: {str(e)}")
+    except HTTPException as error:
+        logger.error(f"Error during cart item update or deletion: {str(error.detail)}")
+        raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail=f"{error}")
+    except Exception as error:
+        logger.error(f"Unexpected error during cart item update or deletion: {str(error)}")
         raise HTTPException(status_code=500, detail="Unexpected error occurred")
