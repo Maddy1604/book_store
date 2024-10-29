@@ -12,3 +12,5 @@ class CreateBookSchema(BaseModel):
     price: int
     stock: int
     
+class AdjustStockRequest(BaseModel):
+    quantity: int
