@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Depends, HTTPException, Security, Request, Response
+from fastapi import FastAPI, Depends, HTTPException, Security, Request, status
 from sqlalchemy.orm import Session
 from .models import Book, get_db
-from .schemas import CreateBookSchema
+from .schemas import CreateBookSchema, AdjustStockRequest
 from .utils import auth_user
 from settings import logger
 from fastapi.security import APIKeyHeader
@@ -208,3 +208,65 @@ def get_book(book_id: int, db: Session = Depends(get_db)):
     except Exception as error:
         logger.error(f"Unexpected error during book retrieval: {str(error)}")
         raise HTTPException(status_code=500, detail="Unexpected error occurred")
+    
+# For managing DB if order placed
+@app.patch("/books/adjust_stock/{book_id}", status_code=200, include_in_schema=False)
+def adjust_stock(book_id: int, payload: AdjustStockRequest, db: Session = Depends(get_db)):
+    """
+    Adjust the stock of a book by reducing or increasing it based on the quantity.
+    Positive quantity increases stock; negative quantity decreases stock.
+    """
+    try:
+        book = db.query(Book).filter(Book.id == book_id).first()
+        if not book:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+
+        new_stock = book.stock - payload.quantity
+        if new_stock < 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insufficient stock to adjust")
+
+        book.stock = new_stock
+        db.commit()
+        db.refresh(book)
+        
+        return {"message": "Stock adjusted successfully", "new_stock": book.stock}
+
+    except HTTPException as error:
+        db.rollback()
+        raise error
+    except Exception as error:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected error occurred")
+    
+
+# # For managing DB if order is canclled
+# @app.patch("/books/adjust_again/{book_id}", status_code=200, include_in_schema=False)
+# def adjust_stock(book_id: int, payload: AdjustStockRequest, db: Session = Depends(get_db)):
+#     """
+#     Adjust the stock of a book by increasing or decreasing it based on the quantity.
+#     Positive quantity increases stock; negative quantity decreases stock.
+#     """
+#     try:
+#         # Find the book by ID
+#         book = db.query(Book).filter(Book.id == book_id).first()
+#         if not book:
+#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+
+#         # Adjust the stock based on the provided quantity
+#         new_stock = book.stock + payload.quantity
+#         if new_stock < 0:
+#             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insufficient stock to adjust")
+
+#         # Update the book's stock and save changes
+#         book.stock = new_stock
+#         db.commit()
+#         db.refresh(book)
+        
+#         return {"message": "Stock adjusted successfully", "new_stock": book.stock}
+
+#     except HTTPException as error:
+#         db.rollback()
+#         raise error
+#     except Exception as error:
+#         db.rollback()
+#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected error occurred")
