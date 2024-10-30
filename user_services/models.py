@@ -26,7 +26,7 @@ def get_db():
 
 # Creating a class User with base as parameter in this table stuructre is going to define
 class User(Base):
-    __tablename__ = 'user'
+    __tablename__ = "user"
     
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     email = Column(String, unique=True, index=True, nullable=False)
