@@ -42,7 +42,7 @@ def create_or_update_cart_item(request: Request, payload: CreateCartItem, db: Se
 
         if payload.quantity > book_stock:
             logger.info(f"Orderd book quantity {payload.quantity} is high than availabel book stock {book_stock}")
-            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"High order quuantity than present book stock ")
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"High order quantity than present book stock ")
 
         # Get or create the user's cart
         cart = db.query(Cart).filter(Cart.user_id == user_id, Cart.is_ordered == False).first()
@@ -128,7 +128,7 @@ def get_cart(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Unexpected error occurred")
 
 # DELETE Cart Item
-@app.delete("/cart/items", status_code=200)
+@app.delete("/cart/items/", status_code=200)
 def delete_cart_item(request: Request, book_id: int, db: Session = Depends(get_db)):
     """
     Decrease the quantity of a cart item or delete it if the quantity reaches zero.
