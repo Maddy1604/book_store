@@ -243,3 +243,26 @@ def test_delete_book_unsuccessful(db_setup, auth_super_user_mock, auth_regular_u
     del_response = client.delete(f"/books/{book_id}", headers= {"Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYW1AZ21haWwuY29tIiwidXNlcl9pZCI6MiwiZXhwIjoxNzMwNDgyODUzfQ.UaRzpGJK5NIuvnAXmefYj_qbBX52I3K-12CLiSyK_VQ"})
     # Assert the response status code and content
     assert del_response.status_code == 403
+
+@responses.activate
+def test_get_book_by_book_id(db_setup, auth_super_user_mock, auth_regular_user_mock):
+    
+    # Payload for creating a note
+    data = {
+        "name": "Cartoon comics",
+        "author": "Mahesh",
+        "description": "Nothing important",
+        "price": 200,
+        "stock": 10
+        }
+
+    # Call the create book API
+    response = client.post("/books/",json=data, headers= {"Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtYWhlc2gxNkBnbWFpbC5jb20iLCJ1c2VyX2lkIjoxLCJleHAiOjE3MzA0ODIwNzJ9.JV1-O79sw8kd3FzK9evxhi0WaJo2aHVtB-uLkVNKilk"})
+    # Assert the response status code and content
+    assert response.status_code == 201
+    book_id = response.json()["data"]["id"]
+     
+    # Call the get book API
+    get_response = client.get(f"/books/{book_id}", headers= {"Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtYWhlc2gxNkBnbWFpbC5jb20iLCJ1c2VyX2lkIjoxLCJleHAiOjE3MzA0ODIwNzJ9.JV1-O79sw8kd3FzK9evxhi0WaJo2aHVtB-uLkVNKilk"})
+    # Assert the response status code and content
+    assert get_response.status_code == 200
