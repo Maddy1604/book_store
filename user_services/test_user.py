@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import pytest 
 
-engine = create_engine("postgresql+psycopg2://postgres:123456@localhost:5432/book_users")
+engine = create_engine("postgresql+psycopg2://postgres:123456@localhost:5432/test_book_user")
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 client = TestClient(app)
@@ -127,7 +127,6 @@ def test_fetch_user(db_setup):
     response = client.post("/login", json=login_data)
     assert response.status_code == 201
     token = response.json()["access_token"]
-    print(token)
 
     response = client.get(f"/user/{token}")
     assert response.status_code == 200
