@@ -9,7 +9,7 @@ import requests as http
 from loguru import logger
 
 # Initialize FastAPI app with dependency
-app = FastAPI(dependencies=[Security(APIKeyHeader(name="Authorization", auto_error=False)), Depends(auth_user)])
+app = FastAPI(dependencies=[Security(APIKeyHeader(name="Authorization", auto_error=False)), Depends(auth_user)], debug=True)
 
 # CREATE Cart Item
 @app.post("/cart/items/", status_code=201)
@@ -247,7 +247,7 @@ def get_order_details(request: Request, db: Session = Depends(get_db)):
         # Query the ordered cart for the user
         cart = db.query(Cart).filter(Cart.user_id == user_id, Cart.is_ordered == True).first()
         if not cart:
-            raise HTTPException(status_code=404, detail="No order found for the user.")
+            raise HTTPException(status_code=404, detail="No Successfull order found for the user.")
 
         # Retrieve items in the cart with book details from book_services
         ordered_items = []
