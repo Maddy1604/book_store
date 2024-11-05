@@ -5,12 +5,37 @@ from .schemas import CreateBookSchema, AdjustStockRequest
 from .utils import auth_user
 from settings import logger
 from fastapi.security import APIKeyHeader
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
+
+# Create a limiter instance
+limiter = Limiter(key_func=get_remote_address)
 
 # Initialize FastAPI app with dependency
 app = FastAPI(dependencies= [Security(APIKeyHeader(name= "Authorization", auto_error= False)), Depends(auth_user)])
 
+app.state.limiter = limiter
+
+# Custom rate limit exception handler
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    """
+    Handles rate limiting exceptions and returns a custom response when the limit is exceeded.
+    """
+    return JSONResponse(
+        status_code=429,
+        content={
+            "message": "Rate limit exceeded. Please try again later.",
+            "detail": f"You have exceeded the allowed number of requests. Try again after some time."
+        }
+    )
+
+
 # CREATE Book
 @app.post("/books/", status_code= 201)
+@limiter.limit("100/minute") 
 def create_book(request: Request, body : CreateBookSchema, db: Session = Depends(get_db)):
     """
     Create a new book in the system. Only admin or superusers are allowed to perform this action.
@@ -61,6 +86,7 @@ def create_book(request: Request, body : CreateBookSchema, db: Session = Depends
 
 # GET all books
 @app.get("/books/", status_code= 200)
+@limiter.limit("100/minute") 
 def get_books(request: Request, db: Session = Depends(get_db)):
     """
     Get a list of all books in the system. Accessible by any authorized user.
@@ -96,6 +122,7 @@ def get_books(request: Request, db: Session = Depends(get_db)):
 
 # UPDATE Book
 @app.put("/books/{book_id}", status_code= 200)
+@limiter.limit("100/minute") 
 def update_book(request: Request, book_id: int, body : CreateBookSchema, db: Session = Depends(get_db)):
     """
     Update details of an existing book. Only admin or superusers are allowed to perform this action.
@@ -141,6 +168,7 @@ def update_book(request: Request, book_id: int, body : CreateBookSchema, db: Ses
 
 # DELETE Book 
 @app.delete("/books/{book_id}", status_code= 200)
+@limiter.limit("100/minute") 
 def delete_book(request: Request, book_id: int, db: Session = Depends(get_db)):
     """
     Delete a book from the system. Only admin or superusers are allowed to perform this action.
@@ -238,7 +266,7 @@ def adjust_stock(book_id: int, payload: AdjustStockRequest, db: Session = Depend
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected error occurred")
     
 
-# # For managing DB if order is placed and then canclled
+# For managing DB if order is placed and then canclled
 @app.patch("/books/adjust_again/{book_id}", status_code=200, include_in_schema=False)
 def adjust_stock(book_id: int, payload: AdjustStockRequest, db: Session = Depends(get_db)):
     """
