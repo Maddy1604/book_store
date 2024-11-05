@@ -213,8 +213,7 @@ def get_book(book_id: int, db: Session = Depends(get_db)):
 @app.patch("/books/adjust_stock/{book_id}", status_code=200, include_in_schema=False)
 def adjust_stock(book_id: int, payload: AdjustStockRequest, db: Session = Depends(get_db)):
     """
-    Adjust the stock of a book by reducing or increasing it based on the quantity.
-    Positive quantity increases stock; negative quantity decreases stock.
+    Adjust the stock of a book by reducing based on ordered quantity.
     """
     try:
         book = db.query(Book).filter(Book.id == book_id).first()
@@ -239,34 +238,34 @@ def adjust_stock(book_id: int, payload: AdjustStockRequest, db: Session = Depend
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected error occurred")
     
 
-# # For managing DB if order is canclled
-# @app.patch("/books/adjust_again/{book_id}", status_code=200, include_in_schema=False)
-# def adjust_stock(book_id: int, payload: AdjustStockRequest, db: Session = Depends(get_db)):
-#     """
-#     Adjust the stock of a book by increasing or decreasing it based on the quantity.
-#     Positive quantity increases stock; negative quantity decreases stock.
-#     """
-#     try:
-#         # Find the book by ID
-#         book = db.query(Book).filter(Book.id == book_id).first()
-#         if not book:
-#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+# # For managing DB if order is placed and then canclled
+@app.patch("/books/adjust_again/{book_id}", status_code=200, include_in_schema=False)
+def adjust_stock(book_id: int, payload: AdjustStockRequest, db: Session = Depends(get_db)):
+    """
+    Adjust the stock of a book by increasing if placed order cart is cancalled.
+    Positive quantity increases stock.
+    """
+    try:
+        # Find the book by ID
+        book = db.query(Book).filter(Book.id == book_id).first()
+        if not book:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
 
-#         # Adjust the stock based on the provided quantity
-#         new_stock = book.stock + payload.quantity
-#         if new_stock < 0:
-#             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insufficient stock to adjust")
+        # Adjust the stock based on the provided quantity
+        new_stock = book.stock + payload.quantity
+        if new_stock < 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insufficient stock to adjust")
 
-#         # Update the book's stock and save changes
-#         book.stock = new_stock
-#         db.commit()
-#         db.refresh(book)
+        # Update the book's stock and save changes
+        book.stock = new_stock
+        db.commit()
+        db.refresh(book)
         
-#         return {"message": "Stock adjusted successfully", "new_stock": book.stock}
+        return {"message": "Stock adjusted successfully", "new_stock": book.stock}
 
-#     except HTTPException as error:
-#         db.rollback()
-#         raise error
-#     except Exception as error:
-#         db.rollback()
-#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected error occurred")
+    except HTTPException as error:
+        db.rollback()
+        raise error
+    except Exception as error:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected error occurred")
