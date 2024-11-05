@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     # For book_services to identify book
     IDENTIFY_BOOK : str
     ORDER_BOOK_STOCK : str
-    # CNACLE_BOOK_STOCK : str
+    CNACLE_BOOK_STOCK : str
 
 settings = Settings()
 

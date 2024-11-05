@@ -306,7 +306,6 @@ def delete_cart(request: Request, db: Session = Depends(get_db)):
         # Delete the cart after stock adjustment
         db.delete(cart)
         db.commit()
-        logger.info(f"Cart and items deleted for user: {user_data['email']}.")
 
         return {
             "message": "Cart deleted and stock restored successfully",
