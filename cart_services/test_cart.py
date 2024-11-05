@@ -169,8 +169,8 @@ def test_update_book_in_cart(db_setup, auth_regular_user_mock , get_book_mock ):
 #     # Call the add items in cart API
 #     add_response = client.post("/cart/items/", json=data, headers={"Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZWpAZ21haWwuY29tIiwidXNlcl9pZCI6MywiZXhwIjoxNzMwOTE2ODQzfQ.CzSonwfT_ClbIAxLkkxb9M-rdeNKU5x88Ciuq31rSmw"})
 #     # Assert the response status code and content
-#     assert add_response.status_code == status.HTTP_406_NOT_ACCEPTABLE
-#     assert add_response.json()["detail"] == "High order quantity than present book stock"
+#     assert add_response.status_code == 406
+#     # assert add_response.json()["detail"] == "High order quantity than present book stock"
 
 # # 4. Test case for getting cart for particular user (Error will occured that cart is not found)
 # @responses.activate
