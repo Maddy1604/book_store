@@ -207,6 +207,7 @@ def delete_book(request: Request, book_id: int, db: Session = Depends(get_db)):
         logger.error(f"Unexpected error during book deletion: {str(error)}")
         raise HTTPException(status_code=500, detail="Unexpected error occurred")
 
+# Inter-service communication API for fetching books details by book ID
 # GET Book by ID
 @app.get("/books/{book_id}", status_code=200, include_in_schema=False)
 def get_book(book_id: int, db: Session = Depends(get_db)):
