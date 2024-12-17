@@ -44,8 +44,10 @@ def create_or_update_cart_item(request: Request, payload: CreateCartItem, db: Se
             logger.info(f"Orderd book quantity {payload.quantity} is high than availabel book stock {book_stock}")
             raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"High order quantity than present book stock ")
 
-        # Get or create the user's cart
+        # Get or create the user's cart | Checking that active cart is present or not 
         cart = db.query(Cart).filter(Cart.user_id == user_id, Cart.is_ordered == False).first()
+
+        # If active cart is not present then creating cart for particular user
         if not cart:
             cart = Cart(user_id=user_id)
             db.add(cart)
@@ -107,6 +109,7 @@ def get_cart(request: Request, db: Session = Depends(get_db)):
         user_data = request.state.user
         user_id = user_data["id"]
 
+        # Featching the cart for particular user based on user id and if cart is not ordered
         cart = db.query(Cart).filter(Cart.user_id == user_id, Cart.is_ordered ==  False).first()
         if not cart:
             raise HTTPException(status_code=404, detail="Cart not found")
@@ -194,14 +197,17 @@ def place_order(request: Request, db: Session = Depends(get_db)):
         if not cart or not cart.items:
             raise HTTPException(status_code=404, detail="Cart is empty or already ordered.")
 
+        # Making the external API call for indentifying book details using book id
         for item in cart.items:
             book_service_url = f"{settings.IDENTIFY_BOOK}{item.book_id}"
             response = http.get(book_service_url, headers={"Authorization": request.headers.get("Authorization")})
 
+            # Reise exception if book details not found
             if response.status_code != 200:
                 logger.info(f"Book with ID {item.book_id} not found in book service.")
                 raise HTTPException(status_code=400, detail=f"Book with ID {item.book_id} not found.")
 
+            # Converting the response in JSON object
             book_data = response.json()
             book_stock = book_data["data"].get("stock")
 
